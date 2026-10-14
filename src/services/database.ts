@@ -1,15 +1,15 @@
 import { AttendanceRecord, DutyShift, Operator, Personnel, SystemSettings } from '../types';
 import { getSupabaseClient, syncRecordToSupabase } from './supabaseClient';
+import { cloudApi } from './api';
 
 const STORAGE_KEYS = {
-  PERSONNEL: 'osc_damts_personnel_v2',
-  SHIFTS: 'osc_damts_shifts_v2',
-  ATTENDANCE: 'osc_damts_attendance_v2',
-  OPERATORS: 'osc_damts_operators_v2',
-  SETTINGS: 'osc_damts_settings_v2',
+  PERSONNEL: 'osc_damts_personnel_v3',
+  SHIFTS: 'osc_damts_shifts_v3',
+  ATTENDANCE: 'osc_damts_attendance_v3',
+  OPERATORS: 'osc_damts_operators_v3',
+  SETTINGS: 'osc_damts_settings_v3',
 };
 
-// Initial Seed Data with generated professional avatars and institutional OSC structure
 const DEFAULT_SHIFTS: DutyShift[] = [
   {
     id: 'shift-morning',
@@ -62,8 +62,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-001',
     dutyId: 'OSC-2026-001',
     fullName: 'Director Arthur Vance',
+    course: 'BA Strategic Communications',
     rankDesignation: 'Executive Director of Strategic Communications',
-    division: 'Office of the Executive Director',
+    division: 'BA Strategic Communications',
     email: 'a.vance@osc.gov.ph',
     phone: '+63 (02) 8928-1101',
     dutyStation: 'OSC Executive Briefing Suite',
@@ -78,8 +79,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-002',
     dutyId: 'OSC-2026-042',
     fullName: 'Captain Marcus Bennett',
+    course: 'BA Journalism',
     rankDesignation: 'Chief Press Liaison Officer',
-    division: 'Media Relations & Press Liaison',
+    division: 'BA Journalism',
     email: 'm.bennett@osc.gov.ph',
     phone: '+63 (02) 8928-1142',
     dutyStation: 'Press Corps Briefing Room',
@@ -94,8 +96,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-003',
     dutyId: 'OSC-2026-088',
     fullName: 'Dr. Elena Rostova',
+    course: 'BS Development Communication',
     rankDesignation: 'Head of Strategic Intelligence & Research',
-    division: 'Strategic Research & Analytics',
+    division: 'BS Development Communication',
     email: 'e.rostova@osc.gov.ph',
     phone: '+63 (02) 8928-1188',
     dutyStation: 'OSC Analytics Command Room',
@@ -110,8 +113,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-004',
     dutyId: 'OSC-2026-115',
     fullName: 'Gabriel Santos',
+    course: 'BS Information Technology',
     rankDesignation: 'Senior Digital Broadcast Specialist',
-    division: 'Digital Media & Creative Production',
+    division: 'BS Information Technology',
     email: 'g.santos@osc.gov.ph',
     phone: '+63 (02) 8928-1115',
     dutyStation: 'Broadcast Production Studio A',
@@ -126,8 +130,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-005',
     dutyId: 'OSC-2026-143',
     fullName: 'Clarissa Tan',
+    course: 'BA Communication',
     rankDesignation: 'Rapid Response Communications Officer',
-    division: 'Crisis Comms & Rapid Response',
+    division: 'BA Communication',
     email: 'c.tan@osc.gov.ph',
     phone: '+63 (02) 8928-1143',
     dutyStation: 'Incident Media Operations Desk',
@@ -142,8 +147,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-006',
     dutyId: 'OSC-2026-192',
     fullName: 'David Sterling',
+    course: 'BS Public Administration',
     rankDesignation: 'Duty Desk Verification Marshal',
-    division: 'Operations & Registry Administration',
+    division: 'BS Public Administration',
     email: 'd.sterling@osc.gov.ph',
     phone: '+63 (02) 8928-1192',
     dutyStation: 'OSC Main Entrance Security Post',
@@ -158,8 +164,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-007',
     dutyId: 'OSC-2026-210',
     fullName: 'Regina Morales',
+    course: 'BA English & Strategic Messaging',
     rankDesignation: 'Senior Editorial & Speechwriting Analyst',
-    division: 'Editorial & Strategic Messaging',
+    division: 'BA English & Strategic Messaging',
     email: 'r.morales@osc.gov.ph',
     phone: '+63 (02) 8928-1210',
     dutyStation: 'Executive Speech Archive',
@@ -174,8 +181,9 @@ const DEFAULT_PERSONNEL: Personnel[] = [
     id: 'osc-p-008',
     dutyId: 'OSC-2026-255',
     fullName: 'Lieutenant Samuel Ocampo',
+    course: 'BS Criminology & Field Security',
     rankDesignation: 'Media Security & Field Liaison',
-    division: 'Field Operations & Liaison',
+    division: 'BS Criminology & Field Security',
     email: 's.ocampo@osc.gov.ph',
     phone: '+63 (02) 8928-1255',
     dutyStation: 'Mobile Media Command Unit',
@@ -228,11 +236,10 @@ const DEFAULT_SETTINGS: SystemSettings = {
   soundEnabled: true,
   supabaseUrl: '',
   supabaseAnonKey: '',
-  syncConnected: false,
-  lastSyncTimestamp: null,
+  syncConnected: true,
+  lastSyncTimestamp: new Date().toISOString(),
 };
 
-// Generate realistic today's attendance logs
 function getInitialAttendanceRecords(): AttendanceRecord[] {
   const today = new Date().toISOString().split('T')[0];
   const dateBase = new Date();
@@ -243,7 +250,7 @@ function getInitialAttendanceRecords(): AttendanceRecord[] {
       personnelId: 'osc-p-001',
       dutyId: 'OSC-2026-001',
       personnelName: 'Director Arthur Vance',
-      division: 'Office of the Executive Director',
+      division: 'BA Strategic Communications',
       shiftId: 'shift-morning',
       shiftName: 'Morning Tactical Watch',
       timestampIn: new Date(dateBase.getFullYear(), dateBase.getMonth(), dateBase.getDate(), 6, 52, 14).toISOString(),
@@ -260,7 +267,7 @@ function getInitialAttendanceRecords(): AttendanceRecord[] {
       personnelId: 'osc-p-002',
       dutyId: 'OSC-2026-042',
       personnelName: 'Captain Marcus Bennett',
-      division: 'Media Relations & Press Liaison',
+      division: 'BA Journalism',
       shiftId: 'shift-morning',
       shiftName: 'Morning Tactical Watch',
       timestampIn: new Date(dateBase.getFullYear(), dateBase.getMonth(), dateBase.getDate(), 7, 8, 30).toISOString(),
@@ -277,7 +284,7 @@ function getInitialAttendanceRecords(): AttendanceRecord[] {
       personnelId: 'osc-p-004',
       dutyId: 'OSC-2026-115',
       personnelName: 'Gabriel Santos',
-      division: 'Digital Media & Creative Production',
+      division: 'BS Information Technology',
       shiftId: 'shift-morning',
       shiftName: 'Morning Tactical Watch',
       timestampIn: new Date(dateBase.getFullYear(), dateBase.getMonth(), dateBase.getDate(), 7, 28, 45).toISOString(),
@@ -294,7 +301,7 @@ function getInitialAttendanceRecords(): AttendanceRecord[] {
       personnelId: 'osc-p-006',
       dutyId: 'OSC-2026-192',
       personnelName: 'David Sterling',
-      division: 'Operations & Registry Administration',
+      division: 'BS Public Administration',
       shiftId: 'shift-morning',
       shiftName: 'Morning Tactical Watch',
       timestampIn: new Date(dateBase.getFullYear(), dateBase.getMonth(), dateBase.getDate(), 6, 45, 0).toISOString(),
@@ -309,16 +316,6 @@ function getInitialAttendanceRecords(): AttendanceRecord[] {
   ];
 }
 
-// Global broadcast channel for instant multi-tab sync between Public Scanner & Admin Portal
-let channel: BroadcastChannel | null = null;
-try {
-  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-    channel = new BroadcastChannel('osc-damts-broadcast');
-  }
-} catch {
-  // Graceful fallback
-}
-
 class CentralDatabase {
   private personnel: Personnel[] = [];
   private shifts: DutyShift[] = [];
@@ -326,30 +323,99 @@ class CentralDatabase {
   private operators: Operator[] = [];
   private settings: SystemSettings = DEFAULT_SETTINGS;
   private listeners: Set<() => void> = new Set();
+  private eventSource: EventSource | null = null;
+  public isCloudConnected: boolean = false;
+  public connectedDevicesCount: number = 1;
 
   constructor() {
     this.init();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', (e) => {
-        if (e.key && e.key.startsWith('osc_damts_')) {
-          this.loadFromStorage();
-          this.notify();
-        }
-      });
-      if (channel) {
-        channel.onmessage = (event) => {
-          if (event.data?.type === 'DATABASE_UPDATED') {
-            this.loadFromStorage();
-            this.notify();
-          }
-        };
-      }
-    }
   }
 
   private init() {
     if (typeof window === 'undefined') return;
     this.loadFromStorage();
+    this.connectToCloudSSE();
+    this.syncFromCloudServer();
+
+    // Cross-device and tab synchronizers
+    window.addEventListener('storage', (e) => {
+      if (e.key && e.key.startsWith('osc_damts_')) {
+        this.loadFromStorage();
+        this.notify();
+      }
+    });
+
+    // Fallback polling every 4 seconds to guarantee sync even if SSE is temporarily disconnected
+    setInterval(() => {
+      this.syncFromCloudServer(true);
+    }, 4000);
+  }
+
+  // Connect to Centralized Cloud Server via Server-Sent Events (SSE)
+  private connectToCloudSSE() {
+    try {
+      if (typeof window === 'undefined' || !('EventSource' in window)) return;
+      if (this.eventSource) {
+        this.eventSource.close();
+      }
+
+      this.eventSource = new EventSource('/api/events');
+
+      this.eventSource.onopen = () => {
+        this.isCloudConnected = true;
+        this.notify();
+      };
+
+      this.eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.data) {
+            this.applyCloudState(payload.data);
+          }
+          if (payload.connectedDevices) {
+            this.connectedDevicesCount = payload.connectedDevices;
+          }
+          this.isCloudConnected = true;
+          this.notify();
+        } catch {
+          // heartbeat
+        }
+      };
+
+      this.eventSource.onerror = () => {
+        this.isCloudConnected = false;
+        this.notify();
+        // EventSource automatically attempts reconnection
+      };
+    } catch (err) {
+      console.warn('SSE connection initialization error:', err);
+    }
+  }
+
+  // Fetch full state from Cloud REST API
+  public async syncFromCloudServer(silent = false) {
+    try {
+      const data = await cloudApi.fetchAllData();
+      if (data) {
+        this.applyCloudState(data);
+        this.isCloudConnected = true;
+        if (data.connectedDevices) {
+          this.connectedDevicesCount = data.connectedDevices;
+        }
+        if (!silent) this.notify();
+      }
+    } catch {
+      this.isCloudConnected = false;
+    }
+  }
+
+  private applyCloudState(cloudData: any) {
+    if (cloudData.personnel) this.personnel = cloudData.personnel;
+    if (cloudData.shifts) this.shifts = cloudData.shifts;
+    if (cloudData.attendance) this.attendance = cloudData.attendance;
+    if (cloudData.operators) this.operators = cloudData.operators;
+    if (cloudData.settings) this.settings = { ...this.settings, ...cloudData.settings };
+    this.saveToStorage(false);
   }
 
   private loadFromStorage() {
@@ -368,29 +434,19 @@ class CentralDatabase {
 
       const set = localStorage.getItem(STORAGE_KEYS.SETTINGS);
       this.settings = set ? { ...DEFAULT_SETTINGS, ...JSON.parse(set) } : DEFAULT_SETTINGS;
-
-      // Ensure initial save if freshly loaded
-      if (!p) localStorage.setItem(STORAGE_KEYS.PERSONNEL, JSON.stringify(DEFAULT_PERSONNEL));
-      if (!s) localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(DEFAULT_SHIFTS));
-      if (!a) localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(this.attendance));
-      if (!o) localStorage.setItem(STORAGE_KEYS.OPERATORS, JSON.stringify(DEFAULT_OPERATORS));
-      if (!set) localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
     } catch (err) {
-      console.error('Failed to load OSC database from storage:', err);
+      console.error('Failed to load local storage:', err);
     }
   }
 
-  private saveToStorage() {
+  private saveToStorage(notify = true) {
     try {
       localStorage.setItem(STORAGE_KEYS.PERSONNEL, JSON.stringify(this.personnel));
       localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(this.shifts));
       localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(this.attendance));
       localStorage.setItem(STORAGE_KEYS.OPERATORS, JSON.stringify(this.operators));
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.settings));
-      
-      if (channel) {
-        channel.postMessage({ type: 'DATABASE_UPDATED', timestamp: Date.now() });
-      }
+      if (notify) this.notify();
     } catch (err) {
       console.error('Failed to save to localStorage:', err);
     }
@@ -403,7 +459,7 @@ class CentralDatabase {
     };
   }
 
-  private notify() {
+  public notify() {
     this.listeners.forEach(cb => cb());
   }
 
@@ -442,7 +498,7 @@ class CentralDatabase {
     );
   }
 
-  // Attendance Scanning Core Logic
+  // Attendance Scanning Core Logic: Dispatches to Central Cloud API
   public recordAttendance(
     dutyIdOrCode: string,
     mode: 'AUTO' | 'TIME_IN' | 'TIME_OUT' = 'AUTO',
@@ -454,7 +510,6 @@ class CentralDatabase {
     action: 'CLOCKED_IN' | 'CLOCKED_OUT' | 'ALREADY_RECORDED' | 'NOT_FOUND';
     message: string;
   } {
-    // Decode duty ID if passed as JSON QR payload or raw ID
     let lookupId = dutyIdOrCode.trim();
     try {
       if (lookupId.startsWith('{')) {
@@ -463,7 +518,7 @@ class CentralDatabase {
         else if (parsed.id) lookupId = parsed.id;
       }
     } catch {
-      // not JSON, keep as is
+      // not JSON
     }
 
     const person = this.findPersonnelByDutyId(lookupId);
@@ -471,7 +526,7 @@ class CentralDatabase {
       return {
         success: false,
         action: 'NOT_FOUND',
-        message: `Personnel with Duty ID "${lookupId}" not found in institutional roster.`,
+        message: `Personnel with ID "${lookupId}" not found in institutional roster.`,
       };
     }
 
@@ -480,18 +535,12 @@ class CentralDatabase {
     const existingActive = this.getActiveClockIn(person.id);
     const assignedShift = this.shifts.find(s => s.id === person.assignedShiftId) || this.shifts[0];
 
-    // Determine Action
     let finalAction: 'CLOCKED_IN' | 'CLOCKED_OUT' = 'CLOCKED_IN';
+    if (mode === 'TIME_OUT') finalAction = 'CLOCKED_OUT';
+    else if (mode === 'TIME_IN') finalAction = 'CLOCKED_IN';
+    else finalAction = existingActive ? 'CLOCKED_OUT' : 'CLOCKED_IN';
 
-    if (mode === 'TIME_OUT') {
-      finalAction = 'CLOCKED_OUT';
-    } else if (mode === 'TIME_IN') {
-      finalAction = 'CLOCKED_IN';
-    } else {
-      // AUTO mode: If currently clocked in, toggle to clock out. Otherwise clock in.
-      finalAction = existingActive ? 'CLOCKED_OUT' : 'CLOCKED_IN';
-    }
-
+    // Optimistic Local Update
     if (finalAction === 'CLOCKED_OUT') {
       if (!existingActive) {
         return {
@@ -502,15 +551,13 @@ class CentralDatabase {
         };
       }
 
-      // Update existing record with timestampOut
       existingActive.timestampOut = nowIso;
       existingActive.scannerNotes = (existingActive.scannerNotes || '') + ' | Duty Tour Completed via Scanner.';
-      
-      // Update personnel status
       person.status = 'OFF_DUTY';
-
       this.saveToStorage();
-      this.notify();
+
+      // Dispatch to Central Cloud Server
+      cloudApi.recordScan(lookupId, 'TIME_OUT', scannerStation).catch(console.error);
 
       // Background Supabase Sync if active
       const sb = getSupabaseClient(this.settings.supabaseUrl, this.settings.supabaseAnonKey);
@@ -535,7 +582,6 @@ class CentralDatabase {
         };
       }
 
-      // Determine Status: Present vs Late
       const now = new Date();
       const [shiftH, shiftM] = (assignedShift.startTime || '08:00').split(':').map(Number);
       const shiftStartMinutes = shiftH * 60 + shiftM;
@@ -552,7 +598,7 @@ class CentralDatabase {
         personnelId: person.id,
         dutyId: person.dutyId,
         personnelName: person.fullName,
-        division: person.division,
+        division: person.course || person.division || 'Strategic Communications',
         shiftId: assignedShift.id,
         shiftName: assignedShift.name,
         timestampIn: nowIso,
@@ -569,9 +615,10 @@ class CentralDatabase {
 
       this.attendance.unshift(newRecord);
       person.status = 'ON_DUTY';
-
       this.saveToStorage();
-      this.notify();
+
+      // Dispatch to Central Cloud Server
+      cloudApi.recordScan(lookupId, 'TIME_IN', scannerStation).catch(console.error);
 
       // Background Supabase Sync if active
       const sb = getSupabaseClient(this.settings.supabaseUrl, this.settings.supabaseAnonKey);
@@ -587,7 +634,7 @@ class CentralDatabase {
     }
   }
 
-  // Personnel Mutations
+  // Personnel Mutations (Dispatched to Cloud Server)
   public addPersonnel(data: Omit<Personnel, 'id'>): Personnel {
     const newPerson: Personnel = {
       ...data,
@@ -595,7 +642,9 @@ class CentralDatabase {
     };
     this.personnel.unshift(newPerson);
     this.saveToStorage();
-    this.notify();
+    cloudApi.addPersonnel(data).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return newPerson;
   }
 
@@ -604,14 +653,18 @@ class CentralDatabase {
     if (idx === -1) return false;
     this.personnel[idx] = { ...this.personnel[idx], ...updates };
     this.saveToStorage();
-    this.notify();
+    cloudApi.updatePersonnel(id, updates).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
   public deletePersonnel(id: string): boolean {
     this.personnel = this.personnel.filter(p => p.id !== id);
     this.saveToStorage();
-    this.notify();
+    cloudApi.deletePersonnel(id).then(ok => {
+      if (ok) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
@@ -623,7 +676,9 @@ class CentralDatabase {
     };
     this.shifts.push(newShift);
     this.saveToStorage();
-    this.notify();
+    cloudApi.addShift(shift).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return newShift;
   }
 
@@ -632,14 +687,18 @@ class CentralDatabase {
     if (idx === -1) return false;
     this.shifts[idx] = { ...this.shifts[idx], ...updates };
     this.saveToStorage();
-    this.notify();
+    cloudApi.updateShift(id, updates).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
   public deleteShift(id: string): boolean {
     this.shifts = this.shifts.filter(s => s.id !== id);
     this.saveToStorage();
-    this.notify();
+    cloudApi.deleteShift(id).then(ok => {
+      if (ok) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
@@ -652,7 +711,9 @@ class CentralDatabase {
     };
     this.operators.push(newOp);
     this.saveToStorage();
-    this.notify();
+    cloudApi.addOperator(data).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return newOp;
   }
 
@@ -661,7 +722,9 @@ class CentralDatabase {
     if (!op) return false;
     op.isActive = !op.isActive;
     this.saveToStorage();
-    this.notify();
+    cloudApi.toggleOperator(id).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
@@ -671,14 +734,18 @@ class CentralDatabase {
     if (idx === -1) return false;
     this.attendance[idx] = { ...this.attendance[idx], ...updates };
     this.saveToStorage();
-    this.notify();
+    cloudApi.updateAttendance(id, updates).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
   public deleteAttendanceRecord(id: string): boolean {
     this.attendance = this.attendance.filter(a => a.id !== id);
     this.saveToStorage();
-    this.notify();
+    cloudApi.deleteAttendance(id).then(ok => {
+      if (ok) this.syncFromCloudServer(true);
+    });
     return true;
   }
 
@@ -686,7 +753,9 @@ class CentralDatabase {
   public updateSettings(updates: Partial<SystemSettings>): SystemSettings {
     this.settings = { ...this.settings, ...updates };
     this.saveToStorage();
-    this.notify();
+    cloudApi.updateSettings(updates).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
     return this.settings;
   }
 
@@ -697,7 +766,9 @@ class CentralDatabase {
     this.operators = DEFAULT_OPERATORS;
     this.settings = DEFAULT_SETTINGS;
     this.saveToStorage();
-    this.notify();
+    cloudApi.resetDatabase().then(ok => {
+      if (ok) this.syncFromCloudServer(true);
+    });
   }
 }
 

@@ -45,11 +45,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, onLogo
       {/* Top Brand Header */}
       <div>
         <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <img
-            src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-            alt="OSC Seal"
-            className="w-10 h-10 rounded-full border border-blue-500/30 object-cover shadow-sm shrink-0"
-          />
+          <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-mono font-extrabold text-sm shadow-sm shrink-0">
+            OSC
+          </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-bold text-white tracking-tight leading-tight truncate">
               OSC Duty Attendance

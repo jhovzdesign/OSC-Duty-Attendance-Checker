@@ -65,11 +65,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onBackToSc
         <div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-3xl p-8 shadow-2xl">
           {/* Institutional Branding Header */}
           <div className="text-center mb-6">
-            <img
-              src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-              alt="OSC Seal"
-              className="w-16 h-16 rounded-full border border-blue-500/30 object-cover mx-auto mb-3 shadow-md"
-            />
+            <div className="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 mx-auto mb-3 shadow-md">
+              <Shield className="w-7 h-7" />
+            </div>
             {/* Requested Exact Login Page Title */}
             <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
               OSC Duty Attendance Management Tracking System

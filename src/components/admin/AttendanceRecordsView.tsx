@@ -211,6 +211,7 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Time In</th>
                 <th className="py-3 px-4">Time Out</th>
+                <th className="py-3 px-4 font-mono text-center">Duty Hours</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Station</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -219,7 +220,7 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
             <tbody className="divide-y divide-slate-800/60 text-xs">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-500">
+                  <td colSpan={10} className="py-12 text-center text-slate-500">
                     No attendance records match your search criteria.
                   </td>
                 </tr>
@@ -273,6 +274,14 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
                             ACTIVE ON DUTY
                           </span>
                         )}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[11px] text-center text-blue-400 font-semibold tabular-nums">
+                        {(() => {
+                          const timeIn = new Date(rec.timestampIn).getTime();
+                          const timeOut = rec.timestampOut ? new Date(rec.timestampOut).getTime() : Date.now();
+                          const hrs = Math.max(0, (timeOut - timeIn) / 3600000);
+                          return `${hrs.toFixed(1)} hrs`;
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold font-mono ${

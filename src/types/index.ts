@@ -8,19 +8,20 @@ export type VerificationType = 'QR_SCAN' | 'MANUAL_VERIFY' | 'STATION_KIOSK';
 
 export interface Personnel {
   id: string;
-  dutyId: string; // e.g., "OSC-2026-084"
-  fullName: string;
-  rankDesignation: string; // e.g., "Senior Strategic Communications Officer"
-  division: string; // e.g., "Media Relations & Press Liaison"
-  email: string;
-  phone: string;
-  dutyStation: string;
-  clearanceLevel: 'LEVEL_1_BASIC' | 'LEVEL_2_CONFIDENTIAL' | 'LEVEL_3_SECRET' | 'EXECUTIVE';
-  status: PersonnelStatus;
-  avatarUrl: string;
-  emergencyContact: string;
-  assignedShiftId: string;
-  joinedDate: string;
+  dutyId: string; // ID Number (e.g. "OSC-2026-558")
+  fullName: string; // Name
+  course: string; // Course
+  avatarUrl: string; // Photo
+  rankDesignation?: string;
+  division?: string;
+  email?: string;
+  phone?: string;
+  dutyStation?: string;
+  clearanceLevel?: 'LEVEL_1_BASIC' | 'LEVEL_2_CONFIDENTIAL' | 'LEVEL_3_SECRET' | 'EXECUTIVE';
+  status?: PersonnelStatus;
+  emergencyContact?: string;
+  assignedShiftId?: string;
+  joinedDate?: string;
 }
 
 export interface DutyShift {

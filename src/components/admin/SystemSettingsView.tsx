@@ -123,6 +123,43 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
         </div>
       </div>
 
+      {/* Live Central Cloud Database Multi-Device Sync Banner */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950/60 via-slate-900 to-slate-900 border border-blue-800/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
+            <Globe className="w-6 h-6 animate-pulse-subtle" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-white tracking-tight">
+                Centralized Cloud Database
+              </h2>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                LIVE CLOUD ACTIVE
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              One shared cloud database across all phones, tablets, and desktop computers. Any update reflects immediately everywhere.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              db.syncFromCloudServer();
+              alert('Re-synchronized with centralized cloud database.');
+            }}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Force Re-sync</span>
+          </button>
+        </div>
+      </div>
+
       <form onSubmit={handleSaveSettings} className="space-y-6">
         {/* Supabase Centralized Database Configuration Section */}
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">

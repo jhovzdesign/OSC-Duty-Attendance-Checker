@@ -56,7 +56,8 @@ export const QrCredentialsView: React.FC<QrCredentialsViewProps> = ({ personnel 
   const filtered = personnel.filter(p =>
     p.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.dutyId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.division.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.course && p.course.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (p.division && p.division.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handlePrint = () => {
@@ -120,23 +121,16 @@ export const QrCredentialsView: React.FC<QrCredentialsViewProps> = ({ personnel 
               >
                 {/* Institutional Top Band */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-                      alt="OSC Emblem"
-                      className="w-7 h-7 rounded-full border border-blue-400/40 object-cover"
-                    />
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider block text-white">
-                        Office of Strategic Comms
-                      </span>
-                      <span className="text-[8px] font-mono text-blue-400 block">
-                        OSC Duty Attendance System
-                      </span>
-                    </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider block text-white">
+                      Office of Strategic Comms
+                    </span>
+                    <span className="text-[8px] font-mono text-blue-400 block">
+                      OSC Duty Attendance System
+                    </span>
                   </div>
                   <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                    {p.clearanceLevel.replace('_', ' ')}
+                    {(p.clearanceLevel || 'LEVEL_2_CONFIDENTIAL').replace('_', ' ')}
                   </span>
                 </div>
 
@@ -154,11 +148,8 @@ export const QrCredentialsView: React.FC<QrCredentialsViewProps> = ({ personnel 
                     <h4 className="text-xs font-bold text-white truncate">
                       {p.fullName}
                     </h4>
-                    <p className="text-[10px] text-slate-400 truncate">
-                      {p.rankDesignation}
-                    </p>
-                    <p className="text-[9px] text-slate-500 truncate mt-0.5">
-                      {p.division}
+                    <p className="text-[10px] text-blue-300 font-medium truncate mt-0.5">
+                      {p.course || p.division || 'BA Communication'}
                     </p>
                   </div>
                 </div>
@@ -216,7 +207,7 @@ export const QrCredentialsView: React.FC<QrCredentialsViewProps> = ({ personnel 
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-400 truncate">
-                        {p.rankDesignation}
+                        {p.course || p.division || 'BA Communication'}
                       </p>
                     </div>
                   </button>
@@ -262,24 +253,17 @@ export const QrCredentialsView: React.FC<QrCredentialsViewProps> = ({ personnel 
                     <>
                       {/* Badge Top Header */}
                       <div className="flex items-center justify-between pb-3 border-b border-slate-800/90 relative z-10">
-                        <div className="flex items-center gap-2.5">
-                          <img
-                            src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-                            alt="OSC Seal"
-                            className="w-10 h-10 rounded-full border border-blue-400/50 object-cover shadow-sm"
-                          />
-                          <div>
-                            <span className="text-[11px] font-extrabold tracking-wider uppercase block text-white">
-                              Office of Strategic Communications
-                            </span>
-                            <span className="text-[9px] font-mono text-blue-400 block font-semibold">
-                              OSC Duty Attendance Management Tracking System
-                            </span>
-                          </div>
+                        <div>
+                          <span className="text-xs font-extrabold tracking-wider uppercase block text-white">
+                            Office of Strategic Communications
+                          </span>
+                          <span className="text-[10px] font-mono text-blue-400 block font-semibold">
+                            OSC Duty Attendance Management Tracking System
+                          </span>
                         </div>
                         <div className="text-right">
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 block">
-                            {selectedPersonnel.clearanceLevel.replace('_', ' ')}
+                            {(selectedPersonnel.clearanceLevel || 'LEVEL_2_CONFIDENTIAL').replace('_', ' ')}
                           </span>
                         </div>
                       </div>
@@ -304,11 +288,8 @@ export const QrCredentialsView: React.FC<QrCredentialsViewProps> = ({ personnel 
                           <h3 className="text-base font-extrabold text-white tracking-tight truncate">
                             {selectedPersonnel.fullName}
                           </h3>
-                          <p className="text-xs font-medium text-slate-300 truncate">
-                            {selectedPersonnel.rankDesignation}
-                          </p>
-                          <p className="text-[10px] text-slate-400 truncate">
-                            {selectedPersonnel.division}
+                          <p className="text-xs font-semibold text-blue-300 truncate">
+                            {selectedPersonnel.course || selectedPersonnel.division || 'BA Communication'}
                           </p>
                         </div>
                       </div>

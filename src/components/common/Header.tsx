@@ -27,11 +27,9 @@ export const Header: React.FC<HeaderProps> = ({ activeView, operatorEmail, onOpe
     <header className="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-8 shrink-0">
       {/* Zone 1: Brand / Institutional Marker */}
       <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
-        <img
-          src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-          alt="OSC Seal"
-          className="w-8 h-8 rounded-full border border-blue-500/40 object-cover shadow-sm"
-        />
+        <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-mono font-bold text-xs shadow-sm">
+          OSC
+        </div>
         <div className="flex items-center gap-2">
           <span className="font-bold text-white text-sm tracking-tight">
             OSC-DAMTS
@@ -44,14 +42,12 @@ export const Header: React.FC<HeaderProps> = ({ activeView, operatorEmail, onOpe
       </div>
 
       {/* Zone 2: Breadcrumbs / System Status (Single Line) */}
-      <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-400 whitespace-nowrap">
+      <div className="hidden lg:flex items-center gap-2.5 text-xs font-medium text-slate-400 whitespace-nowrap">
         <span>Office of Strategic Communications</span>
         <span className="text-slate-600">·</span>
-        <span>Duty Attendance Management</span>
-        <span className="text-slate-600">·</span>
-        <span className="text-emerald-400 font-mono flex items-center gap-1.5">
+        <span className="text-emerald-400 font-mono flex items-center gap-1.5 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          Terminal Live
+          Central Cloud DB Connected
         </span>
       </div>
 

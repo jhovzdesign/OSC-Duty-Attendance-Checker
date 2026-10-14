@@ -36,15 +36,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const onTimeCount = todayRecords.filter(r => r.status === 'PRESENT').length;
   const punctualityRate = presentCount > 0 ? Math.round((onTimeCount / presentCount) * 100) : 100;
 
-  // Breakdown by division
+  // Breakdown by course / division
   const divisionStats: Record<string, { total: number; onDuty: number }> = {};
   personnel.forEach(p => {
-    if (!divisionStats[p.division]) {
-      divisionStats[p.division] = { total: 0, onDuty: 0 };
+    const key = p.course || p.division || 'Strategic Communications';
+    if (!divisionStats[key]) {
+      divisionStats[key] = { total: 0, onDuty: 0 };
     }
-    divisionStats[p.division].total += 1;
+    divisionStats[key].total += 1;
     if (p.status === 'ON_DUTY') {
-      divisionStats[p.division].onDuty += 1;
+      divisionStats[key].onDuty += 1;
     }
   });
 

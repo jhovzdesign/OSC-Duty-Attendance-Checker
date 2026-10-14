@@ -90,11 +90,9 @@ export const PublicScanner: React.FC<PublicScannerProps> = ({ onNavigateLogin })
       <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-              alt="OSC Seal"
-              className="w-10 h-10 rounded-full border border-blue-500/30 object-cover shadow-sm shrink-0"
-            />
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-mono font-extrabold text-sm shadow-sm shrink-0">
+              OSC
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold tracking-tight text-white text-base md:text-lg">
@@ -103,9 +101,13 @@ export const PublicScanner: React.FC<PublicScannerProps> = ({ onNavigateLogin })
                 <span className="text-[11px] font-mono tracking-wider px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-800/60 uppercase">
                   Terminal Station 01
                 </span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Cloud Centralized
+                </span>
               </div>
               <p className="text-xs text-slate-400">
-                Office of Strategic Communications · Executive Command
+                Office of Strategic Communications · Central Real-Time Database
               </p>
             </div>
           </div>
@@ -180,23 +182,23 @@ export const PublicScanner: React.FC<PublicScannerProps> = ({ onNavigateLogin })
                           {lastResult.personnel.dutyId}
                         </span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                          {lastResult.personnel.clearanceLevel.replace('_', ' ')}
+                          {(lastResult.personnel.clearanceLevel || 'LEVEL_2_CONFIDENTIAL').replace('_', ' ')}
                         </span>
                       </div>
                       <h4 className="text-sm font-bold text-white truncate">
                         {lastResult.personnel.fullName}
                       </h4>
-                      <p className="text-xs text-slate-400 truncate">
-                        {lastResult.personnel.rankDesignation}
+                      <p className="text-xs text-blue-400 font-medium truncate">
+                        {lastResult.personnel.course || lastResult.personnel.division || 'BA Communication'}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80 text-xs">
                     <div>
-                      <span className="text-slate-500 text-[11px] block">Division</span>
+                      <span className="text-slate-500 text-[11px] block">Course</span>
                       <span className="font-medium text-slate-200 truncate block">
-                        {lastResult.personnel.division}
+                        {lastResult.personnel.course || lastResult.personnel.division || 'BA Communication'}
                       </span>
                     </div>
                     <div>
@@ -223,19 +225,8 @@ export const PublicScanner: React.FC<PublicScannerProps> = ({ onNavigateLogin })
 
         {/* Public QR Scanner Hero Card */}
         <div className="w-full max-w-xl bg-slate-950/70 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-sm text-center">
-          {/* Official Emblem & Titles */}
+          {/* Title and Subtitle */}
           <div className="flex flex-col items-center mb-6">
-            <div className="relative mb-3">
-              <img
-                src="/src/assets/images/osc_institutional_emblem_1791956358770.jpg"
-                alt="Office of Strategic Communications Seal"
-                className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-blue-500/40 shadow-xl object-cover"
-              />
-              <div className="absolute -bottom-1 -right-1 p-1 bg-slate-900 border border-blue-500/50 rounded-full text-blue-400 shadow-md">
-                <Shield className="w-4 h-4" />
-              </div>
-            </div>
-
             {/* Requested Exact Title and Subtitle */}
             <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
               OSC Duty Attendance
