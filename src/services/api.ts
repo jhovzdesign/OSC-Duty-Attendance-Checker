@@ -77,6 +77,20 @@ export const cloudApi = {
     }
   },
 
+  async addAttendance(record: AttendanceRecord): Promise<AttendanceRecord | null> {
+    try {
+      const res = await fetch(`${API_BASE}/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error('Add attendance error:', err);
+      return null;
+    }
+  },
+
   async updateAttendance(id: string, updates: Partial<AttendanceRecord>): Promise<AttendanceRecord | null> {
     try {
       const res = await fetch(`${API_BASE}/attendance/${id}`, {
@@ -101,7 +115,7 @@ export const cloudApi = {
     }
   },
 
-  async addShift(shift: Omit<DutyShift, 'id'>): Promise<DutyShift | null> {
+  async addShift(shift: Omit<DutyShift, 'id'> | DutyShift): Promise<DutyShift | null> {
     try {
       const res = await fetch(`${API_BASE}/shifts`, {
         method: 'POST',
@@ -139,7 +153,7 @@ export const cloudApi = {
     }
   },
 
-  async addOperator(op: Omit<Operator, 'id' | 'lastLogin'>): Promise<Operator | null> {
+  async addOperator(op: Omit<Operator, 'id' | 'lastLogin'> | Operator): Promise<Operator | null> {
     try {
       const res = await fetch(`${API_BASE}/operators`, {
         method: 'POST',
@@ -150,6 +164,30 @@ export const cloudApi = {
     } catch (err) {
       console.error('Add operator error:', err);
       return null;
+    }
+  },
+
+  async updateOperator(id: string, updates: Partial<Operator>): Promise<Operator | null> {
+    try {
+      const res = await fetch(`${API_BASE}/operators/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error('Update operator error:', err);
+      return null;
+    }
+  },
+
+  async deleteOperator(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/operators/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch (err) {
+      console.error('Delete operator error:', err);
+      return false;
     }
   },
 

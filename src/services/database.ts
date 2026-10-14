@@ -323,6 +323,7 @@ class CentralDatabase {
   private eventSource: EventSource | null = null;
   public isCloudConnected: boolean = false;
   public connectedDevicesCount: number = 1;
+  private currentVersion: number = 0;
 
   constructor() {
     this.init();
@@ -332,9 +333,9 @@ class CentralDatabase {
     if (typeof window === 'undefined') return;
     this.loadFromStorage();
     this.connectToCloudSSE();
-    this.syncFromCloudServer();
+    this.syncFromCloudServer(false);
 
-    // Cross-device and tab synchronizers
+    // Instant cross-tab sync via local storage events
     window.addEventListener('storage', (e) => {
       if (e.key && e.key.startsWith('osc_damts_')) {
         this.loadFromStorage();
@@ -342,10 +343,28 @@ class CentralDatabase {
       }
     });
 
-    // Fallback polling every 4 seconds to guarantee sync even if SSE is temporarily disconnected
+    // Auto-sync when device wakes up, tab gains focus, or network returns
+    window.addEventListener('focus', () => {
+      this.syncFromCloudServer(false);
+    });
+
+    window.addEventListener('online', () => {
+      this.connectToCloudSSE();
+      this.syncFromCloudServer(false);
+    });
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.syncFromCloudServer(false);
+        }
+      });
+    }
+
+    // High-frequency 3-second heartbeat to guarantee sync across all devices
     setInterval(() => {
       this.syncFromCloudServer(true);
-    }, 4000);
+    }, 3000);
   }
 
   // Connect to Centralized Cloud Server via Server-Sent Events (SSE)
@@ -367,6 +386,9 @@ class CentralDatabase {
         try {
           const payload = JSON.parse(event.data);
           if (payload.data) {
+            if (typeof payload.version === 'number') {
+              this.currentVersion = payload.version;
+            }
             this.applyCloudState(payload.data);
           }
           if (payload.connectedDevices) {
@@ -394,12 +416,18 @@ class CentralDatabase {
     try {
       const data = await cloudApi.fetchAllData();
       if (data) {
+        const isNewVersion = typeof data.version === 'number' && data.version !== this.currentVersion;
+        if (typeof data.version === 'number') {
+          this.currentVersion = data.version;
+        }
         this.applyCloudState(data);
         this.isCloudConnected = true;
         if (data.connectedDevices) {
           this.connectedDevicesCount = data.connectedDevices;
         }
-        if (!silent) this.notify();
+        if (isNewVersion || !silent) {
+          this.notify();
+        }
       }
     } catch {
       this.isCloudConnected = false;
@@ -627,11 +655,11 @@ class CentralDatabase {
   public addPersonnel(data: Omit<Personnel, 'id'>): Personnel {
     const newPerson: Personnel = {
       ...data,
-      id: `osc-p-${Date.now().toString().slice(-4)}`,
+      id: `osc-p-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 6)}`,
     };
     this.personnel.unshift(newPerson);
     this.saveToStorage();
-    cloudApi.addPersonnel(data).then(res => {
+    cloudApi.addPersonnel(newPerson).then(res => {
       if (res) this.syncFromCloudServer(true);
     });
     return newPerson;
@@ -661,11 +689,11 @@ class CentralDatabase {
   public addShift(shift: Omit<DutyShift, 'id'>): DutyShift {
     const newShift: DutyShift = {
       ...shift,
-      id: `shift-${Date.now().toString().slice(-4)}`,
+      id: `shift-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 5)}`,
     };
     this.shifts.push(newShift);
     this.saveToStorage();
-    cloudApi.addShift(shift).then(res => {
+    cloudApi.addShift(newShift).then(res => {
       if (res) this.syncFromCloudServer(true);
     });
     return newShift;
@@ -695,15 +723,35 @@ class CentralDatabase {
   public addOperator(data: Omit<Operator, 'id' | 'lastLogin'>): Operator {
     const newOp: Operator = {
       ...data,
-      id: `op-${Date.now().toString().slice(-4)}`,
+      id: `op-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 5)}`,
       lastLogin: new Date().toISOString(),
     };
     this.operators.push(newOp);
     this.saveToStorage();
-    cloudApi.addOperator(data).then(res => {
+    cloudApi.addOperator(newOp).then(res => {
       if (res) this.syncFromCloudServer(true);
     });
     return newOp;
+  }
+
+  public updateOperator(id: string, updates: Partial<Operator>): boolean {
+    const idx = this.operators.findIndex(o => o.id === id);
+    if (idx === -1) return false;
+    this.operators[idx] = { ...this.operators[idx], ...updates };
+    this.saveToStorage();
+    cloudApi.updateOperator(id, updates).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
+    return true;
+  }
+
+  public deleteOperator(id: string): boolean {
+    this.operators = this.operators.filter(o => o.id !== id);
+    this.saveToStorage();
+    cloudApi.deleteOperator(id).then(ok => {
+      if (ok) this.syncFromCloudServer(true);
+    });
+    return true;
   }
 
   public toggleOperatorStatus(id: string): boolean {
@@ -718,6 +766,14 @@ class CentralDatabase {
   }
 
   // Attendance Mutations (Manual Edits)
+  public addAttendanceRecord(record: AttendanceRecord): void {
+    this.attendance.unshift(record);
+    this.saveToStorage();
+    cloudApi.addAttendance(record).then(res => {
+      if (res) this.syncFromCloudServer(true);
+    });
+  }
+
   public updateAttendanceRecord(id: string, updates: Partial<AttendanceRecord>): boolean {
     const idx = this.attendance.findIndex(a => a.id === id);
     if (idx === -1) return false;
@@ -736,6 +792,14 @@ class CentralDatabase {
       if (ok) this.syncFromCloudServer(true);
     });
     return true;
+  }
+
+  public getConnectedDevices(): number {
+    return this.connectedDevicesCount;
+  }
+
+  public isOnline(): boolean {
+    return this.isCloudConnected;
   }
 
   // Settings

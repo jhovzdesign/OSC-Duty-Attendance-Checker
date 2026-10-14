@@ -27,6 +27,12 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
   const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+
+  const showNotification = (msg: string) => {
+    setNotificationMessage(msg);
+    setTimeout(() => setNotificationMessage(null), 3500);
+  };
 
   const handleTestConnection = async () => {
     setIsTesting(true);
@@ -82,7 +88,7 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
     if (confirm('Reset database to default institutional seed records? All customized test logs will be restored to clean baseline.')) {
       db.resetToDefaultSeed();
       setFormData(db.getSettings());
-      alert('System restored to clean institutional baseline.');
+      showNotification('Centralized database restored to clean baseline seed data.');
     }
   };
 
@@ -142,9 +148,9 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => {
-              db.syncFromCloudServer();
-              alert('Re-synchronized with centralized cloud database.');
+            onClick={async () => {
+              await db.syncFromCloudServer(false);
+              showNotification('Centralized cloud database synchronized successfully across all devices.');
             }}
             className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5 shrink-0"
           >
@@ -153,6 +159,22 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
           </button>
         </div>
       </div>
+
+      {/* Notification Toast/Banner */}
+      {notificationMessage && (
+        <div className="p-4 rounded-xl bg-blue-950/80 border border-blue-600/60 text-blue-200 text-xs font-medium flex items-center justify-between shadow-lg animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{notificationMessage}</span>
+          </div>
+          <button
+            onClick={() => setNotificationMessage(null)}
+            className="text-slate-400 hover:text-white"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
         {/* Centralized Cloud Database Engine Status & Verification */}

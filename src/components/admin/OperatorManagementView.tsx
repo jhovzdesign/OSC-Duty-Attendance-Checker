@@ -9,7 +9,9 @@ import {
   Building, 
   Key, 
   Clock, 
-  X 
+  X,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { Operator, SystemRole } from '../../types';
 import { db } from '../../services/database';
@@ -20,6 +22,7 @@ interface OperatorManagementViewProps {
 
 export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ operators }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -29,6 +32,7 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
   });
 
   const handleOpenAdd = () => {
+    setEditingOperator(null);
     setFormData({
       fullName: '',
       email: '',
@@ -39,12 +43,35 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
     setIsModalOpen(true);
   };
 
+  const handleOpenEdit = (op: Operator) => {
+    setEditingOperator(op);
+    setFormData({
+      fullName: op.fullName,
+      email: op.email,
+      role: op.role,
+      station: op.station,
+      isActive: op.isActive,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteOperator = (op: Operator) => {
+    if (confirm(`Revoke credentials and remove desk operator "${op.fullName}"?`)) {
+      db.deleteOperator(op.id);
+    }
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName.trim() || !formData.email.trim()) return;
 
-    db.addOperator(formData);
+    if (editingOperator) {
+      db.updateOperator(editingOperator.id, formData);
+    } else {
+      db.addOperator(formData);
+    }
     setIsModalOpen(false);
+    setEditingOperator(null);
   };
 
   const handleToggleStatus = (id: string) => {
@@ -156,16 +183,33 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => handleToggleStatus(op.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                        op.isActive
-                          ? 'bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-400 border border-slate-700'
-                          : 'bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800'
-                      }`}
-                    >
-                      {op.isActive ? 'Deactivate' : 'Restore'}
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => handleOpenEdit(op)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                        title="Edit Desk Operator Assignment"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(op.id)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                          op.isActive
+                            ? 'bg-slate-800 hover:bg-amber-950 text-slate-300 hover:text-amber-400 border border-slate-700'
+                            : 'bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800'
+                        }`}
+                        title={op.isActive ? 'Deactivate Operator' : 'Restore Operator'}
+                      >
+                        {op.isActive ? 'Deactivate' : 'Restore'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOperator(op)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 transition-colors"
+                        title="Remove Operator Credentials"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -174,16 +218,19 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
         </div>
       </div>
 
-      {/* Add Operator Modal */}
+      {/* Add / Edit Operator Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white">
-                Enroll New Desk Operator
+                {editingOperator ? 'Update Desk Operator' : 'Enroll New Desk Operator'}
               </h3>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingOperator(null);
+                }}
                 className="text-slate-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -250,7 +297,10 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingOperator(null);
+                  }}
                   className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
                 >
                   Cancel
@@ -259,7 +309,7 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md shadow-blue-600/20"
                 >
-                  Provision Operator
+                  {editingOperator ? 'Update Credentials' : 'Provision Operator'}
                 </button>
               </div>
             </form>

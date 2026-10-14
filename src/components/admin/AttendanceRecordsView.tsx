@@ -13,7 +13,8 @@ import {
   Printer, 
   Eye, 
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Plus
 } from 'lucide-react';
 import { AttendanceRecord, Personnel } from '../../types';
 import { db } from '../../services/database';
@@ -35,6 +36,15 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
   const [editStatus, setEditStatus] = useState<'PRESENT' | 'LATE' | 'OVERTIME' | 'EARLY_DEPARTURE' | 'EXCUSED'>('PRESENT');
   const [editNotes, setEditNotes] = useState<string>('');
+
+  // Manual Attendance Record Modal State
+  const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
+  const [manualPersonnelId, setManualPersonnelId] = useState<string>('');
+  const [manualStatus, setManualStatus] = useState<'PRESENT' | 'LATE' | 'OVERTIME' | 'EARLY_DEPARTURE' | 'EXCUSED'>('PRESENT');
+  const [manualTimeIn, setManualTimeIn] = useState<string>('08:00');
+  const [manualTimeOut, setManualTimeOut] = useState<string>('17:00');
+  const [manualDate, setManualDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [manualNotes, setManualNotes] = useState<string>('Manual administrative duty entry.');
 
   const divisions = Array.from(new Set(personnel.map(p => p.division)));
 
@@ -112,6 +122,60 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
     link.click();
   };
 
+  const handleOpenManual = () => {
+    if (personnel.length > 0) {
+      setManualPersonnelId(personnel[0].id);
+    }
+    setManualDate(new Date().toISOString().split('T')[0]);
+    setManualTimeIn('08:00');
+    setManualTimeOut('17:00');
+    setManualStatus('PRESENT');
+    setManualNotes('Manual administrative duty entry.');
+    setIsManualModalOpen(true);
+  };
+
+  const handleSaveManual = (e: React.FormEvent) => {
+    e.preventDefault();
+    const selectedP = personnel.find(p => p.id === manualPersonnelId);
+    if (!selectedP) return;
+
+    const [inH, inM] = manualTimeIn.split(':');
+    const dIn = new Date(manualDate);
+    dIn.setHours(Number(inH) || 8, Number(inM) || 0, 0);
+
+    let dOut: string | null = null;
+    if (manualTimeOut.trim()) {
+      const [outH, outM] = manualTimeOut.split(':');
+      const dOutDate = new Date(manualDate);
+      dOutDate.setHours(Number(outH) || 17, Number(outM) || 0, 0);
+      dOut = dOutDate.toISOString();
+    }
+
+    const shifts = db.getShifts();
+    const shift = shifts.find(s => s.id === selectedP.assignedShiftId) || shifts[0];
+
+    const newRecord: AttendanceRecord = {
+      id: `att-manual-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      personnelId: selectedP.id,
+      dutyId: selectedP.dutyId,
+      personnelName: selectedP.fullName,
+      division: selectedP.course || selectedP.division || 'Strategic Communications',
+      shiftId: shift.id,
+      shiftName: shift.name,
+      timestampIn: dIn.toISOString(),
+      timestampOut: dOut,
+      status: manualStatus,
+      date: manualDate,
+      verificationType: 'MANUAL_VERIFY',
+      stationId: 'OSC-ADMIN-DESK',
+      scannerNotes: manualNotes,
+      recordedBy: 'Administrator Manual Entry',
+    };
+
+    db.addAttendanceRecord(newRecord);
+    setIsManualModalOpen(false);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Header bar */}
@@ -125,7 +189,14 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleOpenManual}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Record Manual Entry</span>
+          </button>
           <button
             onClick={exportCSV}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
@@ -469,6 +540,133 @@ export const AttendanceRecordsView: React.FC<AttendanceRecordsViewProps> = ({
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md shadow-blue-600/20"
                 >
                   Save Status
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Attendance Entry Modal */}
+      {isManualModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white">
+                Record Manual Attendance Entry
+              </h3>
+              <button
+                onClick={() => setIsManualModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveManual} className="mt-4 space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Select Personnel *
+                </label>
+                <select
+                  required
+                  value={manualPersonnelId}
+                  onChange={(e) => setManualPersonnelId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-medium focus:outline-none focus:border-blue-500"
+                >
+                  {personnel.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.fullName} ({p.dutyId}) — {p.course || p.division}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Duty Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={manualDate}
+                    onChange={(e) => setManualDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Attendance Status
+                  </label>
+                  <select
+                    value={manualStatus}
+                    onChange={(e) => setManualStatus(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="PRESENT">PRESENT</option>
+                    <option value="LATE">LATE</option>
+                    <option value="OVERTIME">OVERTIME</option>
+                    <option value="EARLY_DEPARTURE">EARLY DEPARTURE</option>
+                    <option value="EXCUSED">EXCUSED</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Time In (24h) *
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={manualTimeIn}
+                    onChange={(e) => setManualTimeIn(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Time Out (Optional if Active)
+                  </label>
+                  <input
+                    type="time"
+                    value={manualTimeOut}
+                    onChange={(e) => setManualTimeOut(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Administrative Reason / Station Notes
+                </label>
+                <textarea
+                  rows={2}
+                  value={manualNotes}
+                  onChange={(e) => setManualNotes(e.target.value)}
+                  placeholder="e.g. Special coverage assignment, badge scanner replacement authorization..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsManualModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md shadow-blue-600/20"
+                >
+                  Commit Entry to Cloud Database
                 </button>
               </div>
             </form>

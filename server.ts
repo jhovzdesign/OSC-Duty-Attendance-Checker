@@ -472,7 +472,7 @@ app.get('/api/personnel', (_req: Request, res: Response) => {
 app.post('/api/personnel', (req: Request, res: Response) => {
   const newPerson = {
     ...req.body,
-    id: `osc-p-${Date.now().toString().slice(-4)}`,
+    id: req.body.id || `osc-p-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 6)}`,
   };
   dbState.personnel.unshift(newPerson);
   broadcastUpdate('PERSONNEL_ADDED', newPerson);
@@ -637,6 +637,16 @@ app.get('/api/attendance', (_req: Request, res: Response) => {
   res.json(dbState.attendance);
 });
 
+app.post('/api/attendance', (req: Request, res: Response) => {
+  const newRecord = {
+    ...req.body,
+    id: req.body.id || `att-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+  };
+  dbState.attendance.unshift(newRecord);
+  broadcastUpdate('ATTENDANCE_ADDED', newRecord);
+  res.status(201).json(newRecord);
+});
+
 app.put('/api/attendance/:id', (req: Request, res: Response) => {
   const { id } = req.params;
   const idx = dbState.attendance.findIndex(a => a.id === id);
@@ -664,7 +674,7 @@ app.get('/api/shifts', (_req: Request, res: Response) => {
 app.post('/api/shifts', (req: Request, res: Response) => {
   const newShift = {
     ...req.body,
-    id: `shift-${Date.now().toString().slice(-4)}`,
+    id: req.body.id || `shift-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 5)}`,
   };
   dbState.shifts.push(newShift);
   broadcastUpdate('SHIFT_ADDED', newShift);
@@ -698,12 +708,36 @@ app.get('/api/operators', (_req: Request, res: Response) => {
 app.post('/api/operators', (req: Request, res: Response) => {
   const newOp = {
     ...req.body,
-    id: `op-${Date.now().toString().slice(-4)}`,
-    lastLogin: new Date().toISOString(),
+    id: req.body.id || `op-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 5)}`,
+    lastLogin: req.body.lastLogin || new Date().toISOString(),
   };
   dbState.operators.push(newOp);
   broadcastUpdate('OPERATOR_ADDED', newOp);
   res.status(201).json(newOp);
+});
+
+app.put('/api/operators/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const idx = dbState.operators.findIndex(o => o.id === id);
+  if (idx === -1) {
+    res.status(404).json({ error: 'Operator not found' });
+    return;
+  }
+  dbState.operators[idx] = { ...dbState.operators[idx], ...req.body };
+  broadcastUpdate('OPERATOR_UPDATED', dbState.operators[idx]);
+  res.json(dbState.operators[idx]);
+});
+
+app.delete('/api/operators/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const initialLen = dbState.operators.length;
+  dbState.operators = dbState.operators.filter(o => o.id !== id);
+  if (dbState.operators.length === initialLen) {
+    res.status(404).json({ error: 'Operator not found' });
+    return;
+  }
+  broadcastUpdate('OPERATOR_DELETED', { id });
+  res.json({ success: true, id });
 });
 
 app.put('/api/operators/:id/toggle', (req: Request, res: Response) => {
