@@ -81,7 +81,7 @@ export const OperatorManagementView: React.FC<OperatorManagementViewProps> = ({ 
             <span className="text-xs font-bold uppercase tracking-wider">Super Administrator</span>
           </div>
           <p className="text-xs text-slate-400">
-            Unrestricted access to system configuration, personnel enrollments, Supabase backend sync, and audit manifests.
+            Unrestricted access to system configuration, personnel enrollments, centralized cloud database sync, and audit manifests.
           </p>
         </div>
 

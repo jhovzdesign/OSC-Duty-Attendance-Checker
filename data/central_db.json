@@ -336,8 +336,6 @@
     "defaultGracePeriod": 15,
     "autoTimeoutHours": 9,
     "soundEnabled": true,
-    "supabaseUrl": "",
-    "supabaseAnonKey": "",
     "syncConnected": true,
     "lastSyncTimestamp": "2026-10-14T06:21:25.188Z"
   }

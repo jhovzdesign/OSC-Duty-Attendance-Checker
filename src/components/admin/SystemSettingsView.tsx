@@ -4,19 +4,19 @@ import {
   Database, 
   CheckCircle2, 
   AlertCircle, 
-  Copy, 
   Check, 
   RotateCcw, 
   Download, 
   Save, 
   ShieldCheck, 
-  Terminal, 
   Volume2, 
-  Globe 
+  Globe,
+  Server,
+  Activity,
+  Wifi
 } from 'lucide-react';
 import { SystemSettings } from '../../types';
 import { db } from '../../services/database';
-import { testSupabaseConnection, SUPABASE_SQL_SCHEMA } from '../../services/supabaseClient';
 
 interface SystemSettingsViewProps {
   settings: SystemSettings;
@@ -27,30 +27,30 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
   const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
-  const [showSqlModal, setShowSqlModal] = useState<boolean>(false);
-  const [copiedSql, setCopiedSql] = useState<boolean>(false);
 
   const handleTestConnection = async () => {
-    if (!formData.supabaseUrl || !formData.supabaseAnonKey) {
-      setTestResult({
-        success: false,
-        message: 'Please provide both Supabase Project URL and Supabase Anon Key.',
-      });
-      return;
-    }
-
     setIsTesting(true);
     setTestResult(null);
 
-    const res = await testSupabaseConnection(formData.supabaseUrl, formData.supabaseAnonKey);
-    setIsTesting(false);
-    setTestResult(res);
-
-    if (res.success) {
+    try {
+      const res = await fetch('/api/health');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setTestResult({
+        success: true,
+        message: `Connected to Central Cloud Database! (${data.recordsCount || 0} attendance records, ${data.personnelCount || 0} personnel rostered, ${data.connectedDevices || 1} live connected device(s), Server v${data.version || 1})`,
+      });
       db.updateSettings({
         syncConnected: true,
         lastSyncTimestamp: new Date().toISOString(),
       });
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: `Connection error: ${err.message || 'Unable to reach central cloud database engine'}.`,
+      });
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -59,12 +59,6 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
     db.updateSettings(formData);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
-  };
-
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2000);
   };
 
   const handleExportBackup = () => {
@@ -101,7 +95,7 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
             System Settings & Database Engine
           </h1>
           <p className="text-xs md:text-sm text-slate-400 mt-1 font-medium">
-            Configure centralized Supabase database connection, institutional system identity, and operational policies.
+            Configure centralized database synchronization, institutional system identity, and operational policies.
           </p>
         </div>
 
@@ -161,64 +155,63 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
       </div>
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
-        {/* Supabase Centralized Database Configuration Section */}
+        {/* Centralized Cloud Database Engine Status & Verification */}
         <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-4 border-b border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-950/60 border border-emerald-600/40 flex items-center justify-center text-emerald-400 shadow-sm">
-                <Database className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-blue-950/60 border border-blue-600/40 flex items-center justify-center text-blue-400 shadow-sm">
+                <Server className="w-5 h-5" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-white tracking-tight">
-                  Centralized Supabase Database Integration
+                  Centralized Cloud Database Hub
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Connect Public QR Scanner and Admin Portal to your centralized Supabase instance.
+                  Unified persistent datastore synchronized across all browsers, tablets, and scanner kiosks.
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowSqlModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 text-xs font-semibold transition-colors self-start md:self-auto"
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              <span>Generate Supabase SQL Schema</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className="block font-semibold text-slate-300 mb-1">
-                Supabase Project URL
-              </label>
-              <input
-                type="text"
-                value={formData.supabaseUrl}
-                onChange={(e) => setFormData({ ...formData, supabaseUrl: e.target.value })}
-                placeholder="https://xyzproject.supabase.co"
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-blue-500"
-              />
-              <span className="text-[11px] text-slate-500 mt-1 block">
-                Found in your Supabase project dashboard under Project Settings &gt; API
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
+                <Wifi className="w-3 h-3 text-emerald-400" />
+                Live Real-Time SSE Stream Active
               </span>
             </div>
+          </div>
 
-            <div>
-              <label className="block font-semibold text-slate-300 mb-1">
-                Supabase Anon / Public Key
-              </label>
-              <input
-                type="password"
-                value={formData.supabaseAnonKey}
-                onChange={(e) => setFormData({ ...formData, supabaseAnonKey: e.target.value })}
-                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-blue-500"
-              />
-              <span className="text-[11px] text-slate-500 mt-1 block">
-                Public anon API key for client-side queries and scanner updates
-              </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-blue-400" />
+                Engine Architecture
+              </div>
+              <div className="font-bold text-white text-sm">Central Express &amp; SSE</div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Shared live datastore with instant cross-device broadcast.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                Data API Endpoint
+              </div>
+              <div className="font-mono font-bold text-emerald-400 text-sm">/api/data</div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Synchronized bidirectional endpoints for scans &amp; records.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                Data Integrity
+              </div>
+              <div className="font-bold text-white text-sm">Auto-Persisted Storage</div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Saved atomically on server disk, safe across all restarts.
+              </p>
             </div>
           </div>
 
@@ -238,18 +231,25 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
             </div>
           )}
 
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleTestConnection}
-              disabled={isTesting}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors disabled:opacity-50"
-            >
-              {isTesting ? 'Testing Central Connection...' : 'Test Supabase Connection'}
-            </button>
-            <span className="text-xs text-slate-500">
-              {formData.supabaseUrl ? 'Configured for live cloud database.' : 'Currently using active high-performance client storage engine.'}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTesting}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>{isTesting ? 'Verifying Central Engine...' : 'Test Central Database Connection'}</span>
+              </button>
+              <span className="text-xs text-slate-400">
+                Verifies server responsiveness and data integrity across terminals.
+              </span>
+            </div>
+
+            <div className="text-[11px] text-slate-500 font-mono">
+              Last synced: {formData.lastSyncTimestamp ? new Date(formData.lastSyncTimestamp).toLocaleTimeString() : 'Active'}
+            </div>
           </div>
         </div>
 
@@ -400,55 +400,6 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
           </button>
         </div>
       </form>
-
-      {/* Supabase SQL Schema Modal */}
-      {showSqlModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-base font-bold text-white">
-                  Supabase PostgreSQL Schema Setup Script
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowSqlModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="mt-3 text-slate-400">
-              Copy this SQL script and paste it into the <strong>SQL Editor</strong> in your Supabase Dashboard to automatically provision the necessary tables, indexes, and Row Level Security policies.
-            </p>
-
-            <div className="mt-3 relative">
-              <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-emerald-400 max-h-72 overflow-y-auto">
-                {SUPABASE_SQL_SCHEMA}
-              </pre>
-              <button
-                onClick={handleCopySql}
-                className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] flex items-center gap-1.5 border border-slate-700 shadow-md"
-              >
-                {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL'}</span>
-              </button>
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowSqlModal(false)}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

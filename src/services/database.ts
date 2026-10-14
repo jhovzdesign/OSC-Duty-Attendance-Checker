@@ -1,5 +1,4 @@
 import { AttendanceRecord, DutyShift, Operator, Personnel, SystemSettings } from '../types';
-import { getSupabaseClient, syncRecordToSupabase } from './supabaseClient';
 import { cloudApi } from './api';
 
 const STORAGE_KEYS = {
@@ -234,8 +233,6 @@ const DEFAULT_SETTINGS: SystemSettings = {
   defaultGracePeriod: 15,
   autoTimeoutHours: 9,
   soundEnabled: true,
-  supabaseUrl: '',
-  supabaseAnonKey: '',
   syncConnected: true,
   lastSyncTimestamp: new Date().toISOString(),
 };
@@ -559,10 +556,6 @@ class CentralDatabase {
       // Dispatch to Central Cloud Server
       cloudApi.recordScan(lookupId, 'TIME_OUT', scannerStation).catch(console.error);
 
-      // Background Supabase Sync if active
-      const sb = getSupabaseClient(this.settings.supabaseUrl, this.settings.supabaseAnonKey);
-      if (sb) syncRecordToSupabase(sb, existingActive);
-
       return {
         success: true,
         record: existingActive,
@@ -619,10 +612,6 @@ class CentralDatabase {
 
       // Dispatch to Central Cloud Server
       cloudApi.recordScan(lookupId, 'TIME_IN', scannerStation).catch(console.error);
-
-      // Background Supabase Sync if active
-      const sb = getSupabaseClient(this.settings.supabaseUrl, this.settings.supabaseAnonKey);
-      if (sb) syncRecordToSupabase(sb, newRecord);
 
       return {
         success: true,

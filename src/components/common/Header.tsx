@@ -19,7 +19,7 @@ const VIEW_TITLES: Record<ActiveView, string> = {
   'attendance': 'Attendance Records & Time Logs',
   'reports': 'Reports & Institutional Manifests',
   'operators': 'Operator & Access Control',
-  'settings': 'System Settings & Supabase Engine',
+  'settings': 'System Settings & Cloud Database Hub',
 };
 
 export const Header: React.FC<HeaderProps> = ({ activeView, operatorEmail, onOpenPublicScanner }) => {

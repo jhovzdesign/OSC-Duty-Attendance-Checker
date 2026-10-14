@@ -241,8 +241,6 @@ const DEFAULT_SETTINGS = {
   defaultGracePeriod: 15,
   autoTimeoutHours: 9,
   soundEnabled: true,
-  supabaseUrl: '',
-  supabaseAnonKey: '',
   syncConnected: true,
   lastSyncTimestamp: new Date().toISOString(),
 };

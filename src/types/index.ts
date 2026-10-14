@@ -72,8 +72,6 @@ export interface SystemSettings {
   defaultGracePeriod: number;
   autoTimeoutHours: number;
   soundEnabled: boolean;
-  supabaseUrl: string;
-  supabaseAnonKey: string;
   syncConnected: boolean;
   lastSyncTimestamp: string | null;
 }
