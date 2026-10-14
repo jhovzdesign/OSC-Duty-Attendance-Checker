@@ -1,0 +1,6 @@
+{
+  "name": "OSC Duty Attendance Management Tracking System",
+  "description": "OSC Duty Attendance Management Tracking System (OSC-DAMTS) for managing duty attendance, personnel credentials, and attendance records.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
