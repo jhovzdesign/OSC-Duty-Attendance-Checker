@@ -12,8 +12,7 @@ import {
   Volume2, 
   Globe,
   Server,
-  Activity,
-  Wifi
+  Activity
 } from 'lucide-react';
 import { SystemSettings } from '../../types';
 import { db } from '../../services/database';
@@ -44,7 +43,7 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
       const data = await res.json();
       setTestResult({
         success: true,
-        message: `Connected to Central Cloud Database! (${data.recordsCount || 0} attendance records, ${data.personnelCount || 0} personnel rostered, ${data.connectedDevices || 1} live connected device(s), Server v${data.version || 1})`,
+        message: `Connected to Central Cloud Database! (${data.recordsCount || 0} attendance records, ${data.personnelCount || 0} personnel rostered, Server v${data.version || 1})`,
       });
       db.updateSettings({
         syncConnected: true,
@@ -196,8 +195,8 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
 
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
-                <Wifi className="w-3 h-3 text-emerald-400" />
-                Live Real-Time SSE Stream Active
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                Central Cloud Synchronized
               </span>
             </div>
           </div>
@@ -208,9 +207,9 @@ export const SystemSettingsView: React.FC<SystemSettingsViewProps> = ({ settings
                 <Activity className="w-3.5 h-3.5 text-blue-400" />
                 Engine Architecture
               </div>
-              <div className="font-bold text-white text-sm">Central Express &amp; SSE</div>
+              <div className="font-bold text-white text-sm">Centralized Cloud Engine</div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Shared live datastore with instant cross-device broadcast.
+                Shared persistent datastore synchronized across all browsers &amp; devices.
               </p>
             </div>
 

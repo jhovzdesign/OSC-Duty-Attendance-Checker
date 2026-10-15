@@ -320,7 +320,6 @@ class CentralDatabase {
   private operators: Operator[] = [];
   private settings: SystemSettings = DEFAULT_SETTINGS;
   private listeners: Set<() => void> = new Set();
-  private eventSource: EventSource | null = null;
   public isCloudConnected: boolean = false;
   public connectedDevicesCount: number = 1;
   private currentVersion: number = 0;
@@ -332,7 +331,6 @@ class CentralDatabase {
   private init() {
     if (typeof window === 'undefined') return;
     this.loadFromStorage();
-    this.connectToCloudSSE();
     this.syncFromCloudServer(false);
 
     // Instant cross-tab sync via local storage events
@@ -345,73 +343,43 @@ class CentralDatabase {
 
     // Auto-sync when device wakes up, tab gains focus, or network returns
     window.addEventListener('focus', () => {
-      this.syncFromCloudServer(false);
+      this.checkAndSyncCloud();
     });
 
     window.addEventListener('online', () => {
-      this.connectToCloudSSE();
-      this.syncFromCloudServer(false);
+      this.checkAndSyncCloud();
     });
 
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          this.syncFromCloudServer(false);
+          this.checkAndSyncCloud();
         }
       });
     }
 
-    // High-frequency 3-second heartbeat to guarantee sync across all devices
+    // High-frequency polling to synchronize all devices with central cloud database (1.0s)
     setInterval(() => {
-      this.syncFromCloudServer(true);
-    }, 3000);
+      this.checkAndSyncCloud();
+    }, 1000);
   }
 
-  // Connect to Centralized Cloud Server via Server-Sent Events (SSE)
-  private connectToCloudSSE() {
+  // Rapid lightweight version check against Central Cloud Server
+  public async checkAndSyncCloud() {
     try {
-      if (typeof window === 'undefined' || !('EventSource' in window)) return;
-      if (this.eventSource) {
-        this.eventSource.close();
-      }
-
-      this.eventSource = new EventSource('/api/events');
-
-      this.eventSource.onopen = () => {
+      const ver = await cloudApi.fetchVersion();
+      if (ver) {
         this.isCloudConnected = true;
-        this.notify();
-      };
-
-      this.eventSource.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (payload.data) {
-            if (typeof payload.version === 'number') {
-              this.currentVersion = payload.version;
-            }
-            this.applyCloudState(payload.data);
-          }
-          if (payload.connectedDevices) {
-            this.connectedDevicesCount = payload.connectedDevices;
-          }
-          this.isCloudConnected = true;
-          this.notify();
-        } catch {
-          // heartbeat
+        if (typeof ver.version === 'number' && ver.version !== this.currentVersion) {
+          await this.syncFromCloudServer(true);
         }
-      };
-
-      this.eventSource.onerror = () => {
-        this.isCloudConnected = false;
-        this.notify();
-        // EventSource automatically attempts reconnection
-      };
-    } catch (err) {
-      console.warn('SSE connection initialization error:', err);
+      }
+    } catch {
+      this.isCloudConnected = false;
     }
   }
 
-  // Fetch full state from Cloud REST API
+  // Fetch full state from Central Cloud REST API
   public async syncFromCloudServer(silent = false) {
     try {
       const data = await cloudApi.fetchAllData();
@@ -422,9 +390,6 @@ class CentralDatabase {
         }
         this.applyCloudState(data);
         this.isCloudConnected = true;
-        if (data.connectedDevices) {
-          this.connectedDevicesCount = data.connectedDevices;
-        }
         if (isNewVersion || !silent) {
           this.notify();
         }
@@ -582,7 +547,9 @@ class CentralDatabase {
       this.saveToStorage();
 
       // Dispatch to Central Cloud Server
-      cloudApi.recordScan(lookupId, 'TIME_OUT', scannerStation).catch(console.error);
+      cloudApi.recordScan(lookupId, 'TIME_OUT', scannerStation).then(res => {
+        if (res) this.syncFromCloudServer(true);
+      }).catch(console.error);
 
       return {
         success: true,
@@ -639,7 +606,9 @@ class CentralDatabase {
       this.saveToStorage();
 
       // Dispatch to Central Cloud Server
-      cloudApi.recordScan(lookupId, 'TIME_IN', scannerStation).catch(console.error);
+      cloudApi.recordScan(lookupId, 'TIME_IN', scannerStation, newRecord).then(res => {
+        if (res) this.syncFromCloudServer(true);
+      }).catch(console.error);
 
       return {
         success: true,

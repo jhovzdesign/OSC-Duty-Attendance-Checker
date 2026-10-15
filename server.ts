@@ -377,30 +377,10 @@ function saveDatabase(state: CentralDatabaseState) {
 
 dbState = loadDatabase();
 
-// Connected Server-Sent Events (SSE) clients across all devices & browsers
-const sseClients: Response[] = [];
-
+// Centralized Database Mutation Tracking
 function broadcastUpdate(action: string, payload?: any) {
   dbState.version += 1;
   saveDatabase(dbState);
-
-  const message = JSON.stringify({
-    type: 'DATA_UPDATED',
-    action,
-    payload,
-    version: dbState.version,
-    lastUpdated: dbState.lastUpdated,
-    data: dbState,
-  });
-
-  for (let i = sseClients.length - 1; i >= 0; i--) {
-    const res = sseClients[i];
-    try {
-      res.write(`data: ${message}\n\n`);
-    } catch {
-      sseClients.splice(i, 1);
-    }
-  }
 }
 
 // Setup Express App
@@ -413,7 +393,6 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     system: 'OSC Duty Attendance Management Tracking System',
-    connectedDevices: sseClients.length,
     serverTime: new Date().toISOString(),
     recordsCount: dbState.attendance.length,
     personnelCount: dbState.personnel.length,
@@ -421,47 +400,19 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Real-Time Server-Sent Events Endpoint for instantaneous multi-device synchronization
-app.get('/api/events', (req: Request, res: Response) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
-
-  sseClients.push(res);
-
-  // Send initial data snapshot
-  res.write(`data: ${JSON.stringify({
-    type: 'INITIAL_STATE',
+// Lightweight Version Check for rapid cross-device synchronization (<50ms)
+app.get('/api/version', (_req: Request, res: Response) => {
+  res.json({
     version: dbState.version,
     lastUpdated: dbState.lastUpdated,
-    data: dbState,
-    connectedDevices: sseClients.length,
-  })}\n\n`);
-
-  req.on('close', () => {
-    const idx = sseClients.indexOf(res);
-    if (idx !== -1) sseClients.splice(idx, 1);
+    recordsCount: dbState.attendance.length,
+    personnelCount: dbState.personnel.length,
   });
 });
 
-// Periodic heartbeat to keep connections open through load balancers
-setInterval(() => {
-  for (let i = sseClients.length - 1; i >= 0; i--) {
-    try {
-      sseClients[i].write(': ping\n\n');
-    } catch {
-      sseClients.splice(i, 1);
-    }
-  }
-}, 20000);
-
 // Get All Centralized Data
 app.get('/api/data', (_req: Request, res: Response) => {
-  res.json({
-    ...dbState,
-    connectedDevices: sseClients.length,
-  });
+  res.json(dbState);
 });
 
 // ---------------- Personnel REST API ----------------
@@ -505,7 +456,7 @@ app.delete('/api/personnel/:id', (req: Request, res: Response) => {
 
 // ---------------- QR Attendance Scanning Engine ----------------
 app.post('/api/attendance/scan', (req: Request, res: Response) => {
-  const { dutyId, mode = 'AUTO', stationId = dbState.settings.stationId } = req.body;
+  const { dutyId, mode = 'AUTO', stationId = dbState.settings.stationId, record: clientRecord } = req.body;
   if (!dutyId) {
     res.status(400).json({ error: 'Duty ID is required' });
     return;
@@ -598,7 +549,7 @@ app.post('/api/attendance/scan', (req: Request, res: Response) => {
     status = 'LATE';
   }
 
-  const newRecord = {
+  const newRecord = clientRecord || {
     id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     personnelId: person.id,
     dutyId: person.dutyId,

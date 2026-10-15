@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, ExternalLink, User, Radio, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { ExternalLink, User } from 'lucide-react';
 import { ActiveView } from '../../types';
-import { db } from '../../services/database';
 
 interface HeaderProps {
   activeView: ActiveView;
@@ -24,25 +23,6 @@ const VIEW_TITLES: Record<ActiveView, string> = {
 };
 
 export const Header: React.FC<HeaderProps> = ({ activeView, operatorEmail, onOpenPublicScanner }) => {
-  const [isOnline, setIsOnline] = useState<boolean>(db.isOnline());
-  const [connectedDevices, setConnectedDevices] = useState<number>(db.getConnectedDevices());
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
-
-  useEffect(() => {
-    const handleUpdate = () => {
-      setIsOnline(db.isOnline());
-      setConnectedDevices(db.getConnectedDevices());
-    };
-    handleUpdate();
-    return db.subscribe(handleUpdate);
-  }, []);
-
-  const handleManualResync = async () => {
-    setIsSyncing(true);
-    await db.syncFromCloudServer(false);
-    setTimeout(() => setIsSyncing(false), 500);
-  };
-
   return (
     <header className="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-8 shrink-0">
       {/* Zone 1: Brand / Institutional Marker */}
@@ -61,25 +41,11 @@ export const Header: React.FC<HeaderProps> = ({ activeView, operatorEmail, onOpe
         </div>
       </div>
 
-      {/* Zone 2: Breadcrumbs / Multi-Device Central Cloud Status */}
+      {/* Zone 2: Breadcrumbs */}
       <div className="hidden lg:flex items-center gap-3 text-xs font-medium text-slate-400 whitespace-nowrap">
         <span>Office of Strategic Communications</span>
         <span className="text-slate-600">·</span>
-        <button
-          onClick={handleManualResync}
-          className={`font-mono flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-colors ${
-            isOnline
-              ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800/60 hover:bg-emerald-900/60'
-              : 'text-amber-400 bg-amber-950/60 border-amber-800/60 hover:bg-amber-900/60'
-          }`}
-          title="Centralized Shared Cloud Database - Click to Force Refresh"
-        >
-          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-          <span>Central Cloud DB</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-200 font-semibold">{connectedDevices} {connectedDevices === 1 ? 'Device' : 'Devices'} Synced</span>
-          <RefreshCw className={`w-3 h-3 text-slate-400 hover:text-white transition-transform ${isSyncing ? 'animate-spin text-emerald-300' : ''}`} />
-        </button>
+        <span className="text-slate-400">Institutional Duty Roster</span>
       </div>
 
       {/* Zone 3: Primary Action (Top Bar Contract: 1 Primary CTA) */}

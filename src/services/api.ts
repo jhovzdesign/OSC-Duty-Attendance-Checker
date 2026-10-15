@@ -14,6 +14,16 @@ export interface CloudDbSnapshot {
 }
 
 export const cloudApi = {
+  async fetchVersion(): Promise<{ version: number; lastUpdated: string; recordsCount?: number; personnelCount?: number } | null> {
+    try {
+      const res = await fetch(`${API_BASE}/version`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
   async fetchAllData(): Promise<CloudDbSnapshot | null> {
     try {
       const res = await fetch(`${API_BASE}/data`);
@@ -25,12 +35,12 @@ export const cloudApi = {
     }
   },
 
-  async recordScan(dutyId: string, mode: 'AUTO' | 'TIME_IN' | 'TIME_OUT', stationId: string): Promise<any> {
+  async recordScan(dutyId: string, mode: 'AUTO' | 'TIME_IN' | 'TIME_OUT', stationId: string, record?: AttendanceRecord): Promise<any> {
     try {
       const res = await fetch(`${API_BASE}/attendance/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dutyId, mode, stationId }),
+        body: JSON.stringify({ dutyId, mode, stationId, record }),
       });
       return await res.json();
     } catch (err) {
